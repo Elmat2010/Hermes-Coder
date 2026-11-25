@@ -1,0 +1,81 @@
+# CI del taller: verifica cada PR, corre E2E (recorridos de usuario) y, si configuras
+# la variable de repo NETLIFY_SITE, vuelve a correr los E2E contra la PREVIEW de Netlify.
+# Lección del video: un test pasó en local y falló en la preview → probar la preview importa.
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  verificar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: bash scripts/verify.sh
+
+  e2e:
+    needs: verificar
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: npx playwright test
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 7
+
+  e2e-preview:
+    # Activa creando la variable de repositorio NETLIFY_SITE = nombre del sitio (p.ej. "mi-app")
+    if: github.event_name == 'pull_request' && vars.NETLIFY_SITE != ''
+    needs: verificar
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      BASE_URL: https://deploy-preview-${{ github.event.number }}--${{ vars.NETLIFY_SITE }}.netlify.app
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - name: Esperar la preview de Netlify (máx. 10 min)
+        run: |
+          for i in $(seq 1 40); do
+            code=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL" || true)
+            [ "$code" = "200" ] && { echo "Preview lista: $BASE_URL"; sleep 20; exit 0; }
+            echo "Esperando preview ($code)…"; sleep 15
+          done
+          echo "La preview no respondió a tiempo"; exit 1
+      - run: npx playwright test
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-report-preview
+          path: playwright-report/
+          retention-days: 7
