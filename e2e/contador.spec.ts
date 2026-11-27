@@ -21,6 +21,9 @@ test("recorrido: avisa al superar 280 caracteres sin bloquear la escritura", asy
   await page.goto("/");
   const caja = page.getByLabel("Escribe o pega tu texto");
   const resultado = page.locator("#resultado");
+  // La app tiene que estar hidratada antes de medir estados: si la preview sirve
+  // un build viejo (sin "párrafos"), el fallo se ve aquí y no en la clase.
+  await expect(resultado).toContainText("párrafos");
   const clase = /(?:^|\s)excedido(?:\s|$)/;
   const aviso = "⚠ más de 280 caracteres";
   const colorAviso = "rgb(179, 38, 30)";
