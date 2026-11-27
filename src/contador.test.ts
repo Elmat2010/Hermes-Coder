@@ -1,5 +1,5 @@
 import { describe, expect, expectTypeOf, it } from "vitest";
-import { contar, describir, type Estadisticas } from "./contador";
+import { contar, describir, excedeLimite, type Estadisticas } from "./contador";
 
 describe("contar", () => {
   it("texto vacío da cero", () => {
@@ -23,6 +23,25 @@ describe("contar", () => {
   });
   it("redondea el tiempo de lectura hacia arriba", () => {
     expect(contar("palabra ".repeat(201)).minutosLectura).toBe(2);
+  });
+});
+
+describe("excedeLimite", () => {
+  it.each([
+    [279, false],
+    [280, false],
+    [281, true],
+  ])("con %i caracteres y el límite por defecto devuelve %s", (longitud, esperado) => {
+    expect(excedeLimite("a".repeat(longitud))).toBe(esperado);
+  });
+
+  it("respeta el límite personalizado y no avisa al igualarlo", () => {
+    expect(excedeLimite("a".repeat(300), 10)).toBe(true);
+    expect(excedeLimite("a".repeat(10), 10)).toBe(false);
+  });
+
+  it("usa la longitud de la cadena, incluidos espacios y saltos de línea", () => {
+    expect(excedeLimite(" \n", 1)).toBe(true);
   });
 });
 

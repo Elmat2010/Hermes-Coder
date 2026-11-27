@@ -20,6 +20,10 @@ export function contar(texto: string): Estadisticas {
   };
 }
 
+export function excedeLimite(texto: string, limite = 280): boolean {
+  return texto.length > limite;
+}
+
 export function describir(e: Estadisticas): string {
   return `${e.palabras} palabras · ${e.caracteres} caracteres · ${e.parrafos} párrafos · ${e.minutosLectura} min de lectura`;
 }

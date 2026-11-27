@@ -16,3 +16,35 @@ test("recorrido: el usuario escribe dos párrafos y ve el conteo", async ({ page
   await page.getByLabel("Escribe o pega tu texto").fill("primera línea\n\nsegunda línea");
   await expect(page.locator("#resultado")).toHaveText("4 palabras · 28 caracteres · 2 párrafos · 1 min de lectura");
 });
+
+test("recorrido: avisa al superar 280 caracteres sin bloquear la escritura", async ({ page }) => {
+  await page.goto("/");
+  const caja = page.getByLabel("Escribe o pega tu texto");
+  const resultado = page.locator("#resultado");
+  const clase = /\bexcedido\b/;
+  const aviso = "⚠ más de 280 caracteres";
+  const alLimite = "a".repeat(280);
+
+  await caja.fill(alLimite);
+  await expect(resultado).not.toHaveClass(clase);
+  await expect(resultado).not.toContainText(aviso);
+
+  await caja.press("End");
+  await caja.press("b");
+  await expect(caja).toHaveValue(`${alLimite}b`);
+  await expect(resultado).toHaveClass(clase);
+  await expect(resultado).toContainText(aviso);
+  await expect(resultado).toHaveCSS("color", "rgb(179, 38, 30)");
+
+  await caja.press("c");
+  await expect(caja).toHaveValue(`${alLimite}bc`);
+  await expect(resultado).toContainText("282 caracteres");
+  await expect(resultado).toHaveClass(clase);
+  await expect(resultado).toContainText(aviso);
+
+  await caja.press("Backspace");
+  await caja.press("Backspace");
+  await expect(caja).toHaveValue(alLimite);
+  await expect(resultado).not.toHaveClass(clase);
+  await expect(resultado).not.toContainText(aviso);
+});
