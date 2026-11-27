@@ -38,10 +38,16 @@ describe("excedeLimite", () => {
   it("respeta el límite personalizado y no avisa al igualarlo", () => {
     expect(excedeLimite("a".repeat(300), 10)).toBe(true);
     expect(excedeLimite("a".repeat(10), 10)).toBe(false);
+    expect(excedeLimite("a".repeat(300), 301)).toBe(false);
   });
 
   it("usa la longitud de la cadena, incluidos espacios y saltos de línea", () => {
     expect(excedeLimite(" \n", 1)).toBe(true);
+  });
+
+  it("usa texto.length: un emoji de dos unidades UTF-16 supera el límite de uno", () => {
+    expect(excedeLimite("😀", 1)).toBe(true);
+    expect(excedeLimite("😀", 2)).toBe(false);
   });
 });
 

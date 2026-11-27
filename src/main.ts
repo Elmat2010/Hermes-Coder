@@ -1,4 +1,4 @@
-import { contar, describir, excedeLimite } from "./contador";
+import { contar, describir, excedeLimite, LIMITE_CARACTERES } from "./contador";
 import "./estilo.css";
 
 const texto = document.querySelector<HTMLTextAreaElement>("#texto")!;
@@ -10,7 +10,9 @@ function actualizar(): void {
   const excedido = excedeLimite(valor);
   const resumen = describir(contar(valor));
   resultado.classList.toggle("excedido", excedido);
-  resultado.textContent = excedido ? `${resumen} · ⚠ más de 280 caracteres` : resumen;
+  resultado.textContent = excedido
+    ? `${resumen} · ⚠ más de ${LIMITE_CARACTERES} caracteres`
+    : resumen;
 }
 
 texto.addEventListener("input", actualizar);
